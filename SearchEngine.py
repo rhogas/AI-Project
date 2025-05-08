@@ -59,7 +59,24 @@ def build_graph(detection_map: np.array, tolerance: np.float32) -> nx.DiGraph:
 
 def discretize_coords(high_level_plan: np.array, boundaries: Boundaries, map_width: np.int32, map_height: np.int32) -> np.array:
     """ Converts coordiantes from (lat, lon) into (x, y) """
-    ...
+    min_lat, max_lat = boundaries.min_lat, boundaries.max_lat
+    min_lon, max_lon = boundaries.min_lon, boundaries.max_lon
+
+    # Result array for discrete coordinates
+    discrete_coords = []
+
+    for lat, lon in high_level_plan:
+        # Normalize latitude and longitude to [0, 1]
+        norm_lat = (lat - min_lat) / (max_lat - min_lat)
+        norm_lon = (lon - min_lon) / (max_lon - min_lon)
+
+        # Map normalized coordinates to grid size
+        y = round((1 - norm_lat) * (map_height - 1))  # Y axis goes from top (0) to bottom (map_height - 1)
+        x = round(norm_lon * (map_width - 1))         # X axis goes left (0) to right (map_width - 1)
+
+        discrete_coords.append((y, x))
+
+    return np.array(discrete_coords, dtype=np.int32)
 
 def path_finding(G: nx.DiGraph,
                  heuristic_function,
