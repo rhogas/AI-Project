@@ -31,7 +31,31 @@ def build_graph(detection_map: np.array, tolerance: np.float32) -> nx.DiGraph:
     #   -> Go left
     #   -> Go right
     # Not every point has always 4 possible neighbors
-    ...
+    G = nx.DiGraph()
+    H, W = detection_map.shape
+
+    for i in range(H):
+        for j in range(W):
+            if detection_map[i, j] > tolerance:
+                continue
+
+            current = (i, j)
+
+            # Check 4 neighbors (up, down, left, right)
+            neighbors = [
+                (i - 1, j),  # up
+                (i + 1, j),  # down
+                (i, j - 1),  # left
+                (i, j + 1)   # right
+            ]
+
+            for ni, nj in neighbors:
+                if 0 <= ni < H and 0 <= nj < W:
+                    if detection_map[ni, nj] < tolerance:
+                        G.add_edge(current, (ni, nj), weight=detection_map[ni, nj])
+
+    return G
+
 
 def discretize_coords(high_level_plan: np.array, boundaries: Boundaries, map_width: np.int32, map_height: np.int32) -> np.array:
     """ Converts coordiantes from (lat, lon) into (x, y) """

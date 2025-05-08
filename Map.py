@@ -21,8 +21,8 @@ class Map:
         self.radars     = radars            # List containing the radars (objects)
 
         # Create a grid of coordinates (lat, lon) that will be used to compute the detection map
-        latitudes  = np.linspace(boundaries.max_lat, boundaries.min_lat, height)
-        longitudes = np.linspace(boundaries.min_lon, boundaries.max_lon, width)
+        latitudes  = np.linspace(boundaries.max_lat, boundaries.min_lat, height) # shape (H,)
+        longitudes = np.linspace(boundaries.min_lon, boundaries.max_lon, width) # shape (W,)
         lon_grid, lat_grid = np.meshgrid(longitudes, latitudes)  # shape (H, W)
 
         self.grid = np.dstack((lat_grid, lon_grid))  # shape (H, W, 2)
