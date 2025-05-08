@@ -61,3 +61,13 @@ class Map:
     
     def compute_detection_map(self) -> np.array:
         """ Computes the detection map for each coordinate in the map (with all the radars) """
+        detection_map = np.zeros((self.height, self.width), dtype=np.float32)
+
+        for radar in self.radars:
+            for i in range(self.height):
+                for j in range(self.width):
+                    lat, lon = self.grid[i][j]
+                    psi_i_star = radar.compute_detection_level(lat, lon)
+                    detection_map[i, j] = max(detection_map[i, j], psi_i_star)
+
+        return detection_map
