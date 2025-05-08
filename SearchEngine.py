@@ -3,6 +3,7 @@ import numpy as np
 import networkx as nx
 from Boundaries import Boundaries
 from Map import EPSILON
+from networkx import astar_path
 
 # Number of nodes expanded in the heuristic search (stored in a global variable to be updated from the heuristic functions)
 NODES_EXPANDED = 0
@@ -98,7 +99,36 @@ def path_finding(G: nx.DiGraph,
                  map_width: np.int32,
                  map_height: np.int32) -> tuple:
     """ Implementation of the main searching / path finding algorithm """
-    ...
+    # Step 1: Convert (lat, lon) into grid (i, j) positions
+    discrete_coords = discretize_coords(locations, boundaries, map_width, map_height)
+
+    # Step 2: Build the path following the order of POIs
+    current_index = initial_location_index
+    final_path = [] # Initialize the final plan 
+
+    for next_index in range(len(discrete_coords)):
+        # Skip the current index (already visited)
+        if next_index == current_index:
+            continue
+
+        source = tuple(discrete_coords[current_index])
+        target = tuple(discrete_coords[next_index])
+
+        # Use A* algorithm to find the path from source to target
+        try:
+            # Both heuristics must take two arguments: the current node and the target node, that is why
+            # we use a lambda function to pass the heuristic function
+            path_segment = astar_path(G, source, target, heuristic=lambda u, v: heuristic_function(u, v))
+            
+            if not final_path: # If final_path is empty, initialize it with the first segment
+                final_path.extend(path_segment)
+            else:
+                final_path.extend(path_segment[1:])  # Avoid duplicating the target node
+        except nx.NetworkXNoPath: # This exception is raised by astar_path if no path exists
+            print(f"No path found from {source} to {target}.")
+            continue
+
+    return np.array(final_plan, dtype=np.int32), discrete_coords
 
 def compute_path_cost(G: nx.DiGraph, solution_plan: list) -> np.float32:
     """ Computes the total cost of the whole planning solution """
@@ -113,7 +143,6 @@ def compute_path_cost(G: nx.DiGraph, solution_plan: list) -> np.float32:
         if G.has_edge(u, v):
             total_cost += G[u][v]['weight']
         else:
-            # print error
             print(f"Error: Edge from {u} to {v} does not exist in the graph.")
-            
+
     return np.float32(total_cost)
