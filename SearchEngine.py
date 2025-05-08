@@ -10,6 +10,7 @@ NODES_EXPANDED = 0
 def h1(current_node, objective_node) -> np.float32:
     """ First heuristic to implement """
     global NODES_EXPANDED
+
     # Extract current node and goal node coordinates
     i, j = current_node
     i_goal, j_goal = objective_node
@@ -23,8 +24,14 @@ def h1(current_node, objective_node) -> np.float32:
 def h2(current_node, objective_node) -> np.float32:
     """ Second heuristic to implement """
     global NODES_EXPANDED
-    h = 0
-    ...
+
+    # Extract current node and goal node coordinates
+    i, j = current_node
+    i_goal, j_goal = objective_node
+    
+    # Compute Manhattan distance
+    h = abs(i - i_goal) + abs(j - j_goal)
+
     NODES_EXPANDED += 1
     return h
 
