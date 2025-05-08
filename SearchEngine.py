@@ -102,4 +102,18 @@ def path_finding(G: nx.DiGraph,
 
 def compute_path_cost(G: nx.DiGraph, solution_plan: list) -> np.float32:
     """ Computes the total cost of the whole planning solution """
-    ...
+
+    total_cost = 0.0
+
+    for i in range(len(solution_plan) - 1):
+        u = solution_plan[i]
+        v = solution_plan[i + 1]
+        
+        # Add the weight of the edge (u -> v)
+        if G.has_edge(u, v):
+            total_cost += G[u][v]['weight']
+        else:
+            # print error
+            print(f"Error: Edge from {u} to {v} does not exist in the graph.")
+            
+    return np.float32(total_cost)
