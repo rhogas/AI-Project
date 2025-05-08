@@ -10,8 +10,13 @@ NODES_EXPANDED = 0
 def h1(current_node, objective_node) -> np.float32:
     """ First heuristic to implement """
     global NODES_EXPANDED
-    h = 0
-    ...
+    # Extract current node and goal node coordinates
+    i, j = current_node
+    i_goal, j_goal = objective_node
+
+    # Compute Euclidean distance
+    h = np.sqrt((i - i_goal)**2 + (j - j_goal)**2)
+
     NODES_EXPANDED += 1
     return h
 
