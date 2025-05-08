@@ -70,4 +70,4 @@ class Map:
                     psi_i_star = radar.compute_detection_level(lat, lon)
                     detection_map[i, j] = max(detection_map[i, j], psi_i_star)
 
-        return detection_map
+        return detection_map * 2
