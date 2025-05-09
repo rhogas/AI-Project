@@ -70,4 +70,15 @@ class Map:
                     psi_i_star = radar.compute_detection_level(lat, lon)
                     detection_map[i, j] = max(detection_map[i, j], psi_i_star)
 
+        # Step 2: MinMax normalization with epsilon
+        psi_min = detection_map.min()
+        psi_max = detection_map.max()
+
+        # Prevent division by zero
+        if psi_max == psi_min:
+            detection_map[:] = EPSILON  # All cells have same value, just set them to epsilon
+        else:
+            detection_map = ((detection_map - psi_min) / (psi_max - psi_min)) * (1 - EPSILON) + EPSILON
+
+        print(f"Detection map shape: {detection_map}")
         return detection_map
