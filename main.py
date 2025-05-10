@@ -92,6 +92,12 @@ def main() -> None:
     # Parse the input parameters (arguments) of the program (current execution)
     execution_parameters = parse_args()
 
+    # Ask the user for the heuristic function to use
+    heuristic_function = input("Select the heuristic function to use ('h1' for the Euclidean distance or 'h2' for the Manhattan distance):\n")
+    while heuristic_function not in ['h1', 'h2']:
+        print("ERROR. Invalid heuristic function. Please select either 'h1' or 'h2'.")
+        heuristic_function = input("Select the heuristic function to use ('h1' for the Euclidean distance or 'h2' for the Manhattan distance):\n")
+    
     # Set the pseudo-random number generator seed (DO NOT MODIFY)
     np.random.seed(42)
 
@@ -128,7 +134,7 @@ def main() -> None:
 
     # Compute the solution
     solution_plan, nodes_expanded, pois_in_path = path_finding(G=G,
-                                 heuristic_function=h2,
+                                 heuristic_function=h1 if heuristic_function == 'h1' else h2,
                                  locations=POIs, 
                                  initial_location_index=0,
                                  boundaries=boundaries,

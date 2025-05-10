@@ -145,7 +145,7 @@ def path_finding(G: nx.DiGraph,
             current_index = next_index  # Update the current index to the next one
 
         except nx.NodeNotFound:
-            print(f"ERROR. One of the nodes ({source} or {target}) is not in the graph. The POI may be outside the map or has no valid neighbors due to the tolerance setting.")
+            print(f"ERROR. One of the POIs ({source} or {target}) is not in the graph.\nThe POI may be outside the map or has no valid neighbors due to the tolerance setting (it is too low).")
             return None, 0, None
         except nx.NetworkXNoPath: # This exception is raised by astar_path if no path exists
             print(f"ERROR. No path exists from {source} POI to {target} POI with the current map and tolerance.")
@@ -202,7 +202,7 @@ def create_visiting_order(locations, heuristic_function, G, boundaries, map_widt
                 else:
                     print(f"No path between {source} and {target}")
             except nx.NodeNotFound:
-                print(f"ERROR. One of the nodes ({source} or {target}) is not in the graph. The POI may be outside the map or has no valid neighbors due to the tolerance setting.")
+                print(f"ERROR. One of the POIs ({source} or {target}) is not in the graph.\nThe POI may be outside the map or has no valid neighbors due to the tolerance setting (it is too low).")
                 return None
 
             except nx.NetworkXNoPath:
