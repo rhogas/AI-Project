@@ -79,6 +79,5 @@ class Map:
             detection_map[:] = EPSILON  # All cells have same value, just set them to epsilon
         else:
             detection_map = ((detection_map - psi_min) / (psi_max - psi_min)) * (1 - EPSILON) + EPSILON
-
-        print(f"Detection map shape: {detection_map}")
+            
         return detection_map
