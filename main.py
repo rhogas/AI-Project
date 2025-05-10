@@ -84,6 +84,11 @@ def parse_args() -> dict:
 # System's main function
 def main() -> None:
 
+    if len(sys.argv) != 3:
+        print("ERROR. Usage: python3 main.py <scenario> <tolerance>")
+        print("Example: python3 main.py scenario_1 0.5")
+        return
+    
     # Parse the input parameters (arguments) of the program (current execution)
     execution_parameters = parse_args()
 
