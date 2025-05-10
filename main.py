@@ -130,6 +130,10 @@ def main() -> None:
                                  map_width=M.width,
                                  map_height=M.height)
     
+    # Check if there is no solution
+    if solution_plan is None and nodes_expanded == 0 and pois_in_path is None:
+        return
+    
     # Compute the solution cost
     path_cost = compute_path_cost(G=G, solution_plan=solution_plan)
 
