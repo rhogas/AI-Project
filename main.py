@@ -1,6 +1,7 @@
 # Required imports
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 import sys
 import json
 import os
@@ -34,8 +35,10 @@ def plot_detection_fields(detection_map: np.array, bicubic: bool=True) -> None:
     plt.show()
     return
 
-def plot_solution(detection_map: np.array, solution_plan: list, bicubic: bool=True) -> None:
+def plot_solution(detection_map: np.array, solution_plan: list, pois: list, bicubic: bool=True) -> None:
+    # POIS introducido por mi
     """ Auxiliary function for plotting the solution plan with markers in each POI """
+    solution_plan = [[str(coord)] for coord in solution_plan] ## introducido por mi
     plt.figure(figsize=(8,8))
     plt.title("Solution plan")
     for i in range(len(solution_plan)):
@@ -47,6 +50,11 @@ def plot_solution(detection_map: np.array, solution_plan: list, bicubic: bool=Tr
         plt.plot(path_array[:, 1], path_array[:, 0], zorder=1)
     final_point = eval(solution_plan[-1][-1])
     plt.scatter(final_point[1], final_point[0], c='black', marker='*', label=f'Waypoints', zorder=2)
+
+    # Plot POIs (introducido por mi)
+    for i, poi in enumerate(pois):
+        plt.scatter(poi[1], poi[0], c='red', marker='o', edgecolors='black', s=100, label='POI' if i == 0 else "")
+    
     im = plt.imshow(X=detection_map, cmap='Greens', interpolation='bicubic' if bicubic else None)
     plt.colorbar(im, label='Detection values')
     plt.legend()
@@ -110,7 +118,7 @@ def main() -> None:
     POIs = np.array(execution_parameters['POIs'], dtype=np.float32)
 
     # Compute the solution
-    solution_plan, nodes_expanded = path_finding(G=G,
+    solution_plan, nodes_expanded, pois_in_path = path_finding(G=G,
                                  heuristic_function=h2,
                                  locations=POIs, 
                                  initial_location_index=0,
@@ -126,7 +134,7 @@ def main() -> None:
     print(f"Number of expanded nodes: {nodes_expanded}")
 
     # Plot the solution
-    plot_solution(detection_map=detection_map, solution_plan=solution_plan)
+    plot_solution(detection_map=detection_map, pois=pois_in_path, solution_plan=solution_plan)
 
 if __name__ == '__main__':
     main()
