@@ -36,28 +36,32 @@ def plot_detection_fields(detection_map: np.array, bicubic: bool=True) -> None:
     return
 
 def plot_solution(detection_map: np.array, solution_plan: list, pois: list, bicubic: bool=True) -> None:
-    # POIS introducido por mi
     """ Auxiliary function for plotting the solution plan with markers in each POI """
-    solution_plan = [[str(coord)] for coord in solution_plan] ## introducido por mi
     plt.figure(figsize=(8,8))
     plt.title("Solution plan")
-    for i in range(len(solution_plan)):
-        start_point = eval(solution_plan[i][0])
-        plt.scatter(start_point[1], start_point[0], c='black', marker='*', zorder=2)
-        path_array = np.zeros(shape=(len(solution_plan[i]), 2))
-        for j in range(len(path_array)):
-            path_array[j] = eval(solution_plan[i][j])
-        plt.plot(path_array[:, 1], path_array[:, 0], zorder=1)
-    final_point = eval(solution_plan[-1][-1])
-    plt.scatter(final_point[1], final_point[0], c='black', marker='*', label=f'Waypoints', zorder=2)
 
-    # Plot POIs (introducido por mi)
+    # Split into lat and lon
+    lats = [point[0] for point in solution_plan]
+    lons = [point[1] for point in solution_plan]
+
+    # Plot blue line connecting all path points
+    plt.plot(lons, lats, color='blue', linewidth=1, zorder=1, label='Path')
+
+    # Plot POIs
     for i, poi in enumerate(pois):
-        plt.scatter(poi[1], poi[0], c='red', marker='o', edgecolors='black', s=100, label='POI' if i == 0 else "")
-    
+        plt.scatter(poi[1], poi[0], c='red', marker='o', edgecolors='black', s=100, label='Waypoints (POIs)' if i == 0 else "")
+
     im = plt.imshow(X=detection_map, cmap='Greens', interpolation='bicubic' if bicubic else None)
     plt.colorbar(im, label='Detection values')
-    plt.legend()
+
+    # Plot the grid lines
+    height, width = detection_map.shape
+    for x in range(width + 1):
+        plt.axvline(x - 0.5, color='gray', linestyle='--', linewidth=0.5, alpha=0.5)
+    for y in range(height + 1):
+        plt.axhline(y - 0.5, color='gray', linestyle='--', linewidth=0.5, alpha=0.5)
+
+    plt.legend(loc = 'upper right')
     plt.show()
     return
 
