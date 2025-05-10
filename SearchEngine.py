@@ -51,7 +51,6 @@ def build_graph(detection_map: np.array, tolerance: np.float32) -> nx.DiGraph:
         for j in range(W):
             if detection_map[i, j] > tolerance:
                 continue
-
             current = (i, j)
 
             # Check 4 neighbors (up, down, left, right)
@@ -65,7 +64,8 @@ def build_graph(detection_map: np.array, tolerance: np.float32) -> nx.DiGraph:
             for ni, nj in neighbors:
                 if 0 <= ni < H and 0 <= nj < W:
                     if detection_map[ni, nj] < tolerance:
-                        G.add_edge(current, (ni, nj), weight=detection_map[ni, nj])
+                        if (i, j) != (ni, nj):  # Ensure no self-loops
+                            G.add_edge(current, (ni, nj), weight=detection_map[ni, nj])
 
     return G
 
@@ -102,9 +102,12 @@ def path_finding(G: nx.DiGraph,
     # Step 1: Convert (lat, lon) into grid (i, j) positions
     discrete_coords = discretize_coords(locations, boundaries, map_width, map_height)
 
+    
     # Step 2: Build the path following the order of POIs
     current_index = initial_location_index
     final_path = [] # Initialize the final plan 
+    pois_in_path = [] # Initialize the POIs in the path
+
 
     for next_index in range(len(discrete_coords)):
         # Skip the current index (already visited)
@@ -114,21 +117,36 @@ def path_finding(G: nx.DiGraph,
         source = tuple(discrete_coords[current_index])
         target = tuple(discrete_coords[next_index])
 
-        # Use A* algorithm to find the path from source to target
-        try:
-            # Both heuristics must take two arguments: the current node and the target node, that is why
-            # we use a lambda function to pass the heuristic function
-            path_segment = astar_path(G, source, target, heuristic=lambda u, v: heuristic_function(u, v))
-            
-            if not final_path: # If final_path is empty, initialize it with the first segment
-                final_path.extend(path_segment)
-            else:
-                final_path.extend(path_segment[1:])  # Avoid duplicating the target node
-        except nx.NetworkXNoPath: # This exception is raised by astar_path if no path exists
-            print(f"No path found from {source} to {target}.")
-            continue
+        pois_in_path.append(source) # Save the source POI in the path
 
-    return np.array(final_plan, dtype=np.int32), discrete_coords
+        if nx.has_path(G, source, target):
+            # Use A* algorithm to find the path from source to target
+            try:
+                # Both heuristics must take two arguments: the current node and the target node, that is why
+                # we use a lambda function to pass the heuristic function
+                path_segment = astar_path(G, source, target, heuristic=lambda u, v: heuristic_function(u, v))
+
+                if not final_path: # If final_path is empty, initialize it with the first segment
+                    final_path.extend(path_segment)
+                else:
+                    final_path.extend(path_segment[1:])  # Avoid duplicating the target node
+                
+
+                # Add the POI to the pois_in_path list
+                pois_in_path.append(target)  # Save the discrete target grid coordinate
+
+                current_index = next_index  # Update the current index to the next one
+
+            except nx.NetworkXNoPath: # This exception is raised by astar_path if no path exists
+                print(f"No path found from {source} to {target}.")
+                continue
+        else:
+            print(f"No path exists from {source} to {target}.")
+            continue
+            
+    return final_path, NODES_EXPANDED, pois_in_path
+
+
 
 def compute_path_cost(G: nx.DiGraph, solution_plan: list) -> np.float32:
     """ Computes the total cost of the whole planning solution """
@@ -136,8 +154,8 @@ def compute_path_cost(G: nx.DiGraph, solution_plan: list) -> np.float32:
     total_cost = 0.0
 
     for i in range(len(solution_plan) - 1):
-        u = solution_plan[i]
-        v = solution_plan[i + 1]
+        u = tuple(solution_plan[i]) # Convert numpy array to tuple
+        v = tuple(solution_plan[i + 1]) # Convert numpy array to tuple
         
         # Add the weight of the edge (u -> v)
         if G.has_edge(u, v):
