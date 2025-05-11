@@ -49,7 +49,7 @@ def plot_solution(detection_map: np.array, solution_plan: list, pois: list, bicu
 
     # Plot POIs
     for i, poi in enumerate(pois):
-        plt.scatter(poi[1], poi[0], c='red', marker='o', edgecolors='black', s=100, label='Waypoints (POIs)' if i == 0 else "")
+        plt.scatter(poi[1], poi[0], c='red', marker='o', edgecolors='black', s=60, label='Waypoints (POIs)' if i == 0 else "")
 
     im = plt.imshow(X=detection_map, cmap='Greens', interpolation='bicubic' if bicubic else None)
     plt.colorbar(im, label='Detection values')
@@ -61,7 +61,7 @@ def plot_solution(detection_map: np.array, solution_plan: list, pois: list, bicu
     for y in range(height + 1):
         plt.axhline(y - 0.5, color='gray', linestyle='--', linewidth=0.5, alpha=0.5)
 
-    plt.legend(loc = 'upper right')
+    plt.legend(loc = 'lower left')
     plt.show()
     return
 

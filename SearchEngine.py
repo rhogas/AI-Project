@@ -174,6 +174,12 @@ def compute_path_cost(G: nx.DiGraph, solution_plan: list) -> np.float32:
 
 
 def create_visiting_order(locations, heuristic_function, G, boundaries, map_width, map_height):
+    """ Create the visiting order of the POIs based on the heuristic function """
+
+    if len(locations) < 2:
+        print("ERROR. The number of POIs to visit is less than 2.")
+        return None
+    
     # Initialize the visiting order and the set of unvisited POIs
     remaining_pois = list(range(len(locations)))  # List of all POIs to visit
     current_index = 0  # Start from the initial POI (index 0, for example)
@@ -187,6 +193,10 @@ def create_visiting_order(locations, heuristic_function, G, boundaries, map_widt
         min_cost = float('inf')  # Initialize with a large cost value
 
         for next_poi in remaining_pois:
+            # Skip if the next POI is the same as the current one
+            if next_poi == current_index:
+                continue
+
             source = tuple(discretize_coords([locations[current_index]], boundaries, map_width, map_height)[0])
             target = tuple(discretize_coords([locations[next_poi]], boundaries, map_width, map_height)[0])
 
@@ -200,7 +210,8 @@ def create_visiting_order(locations, heuristic_function, G, boundaries, map_widt
                         min_cost = cost
                         next_index = next_poi
                 else:
-                    print(f"No path between {source} and {target}")
+                    print(f"ERROR. No path exists between {source} and {target}")
+                    return None
             except nx.NodeNotFound:
                 print(f"ERROR. One of the POIs ({source} or {target}) is not in the graph.\nThe POI may be outside the map or has no valid neighbors due to the tolerance setting (it is too low).")
                 return None
