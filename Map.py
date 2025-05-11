@@ -61,8 +61,11 @@ class Map:
     
     def compute_detection_map(self) -> np.array:
         """ Computes the detection map for each coordinate in the map (with all the radars) """
+
+        # Initialize the detection map with zeros
         detection_map = np.zeros((self.height, self.width), dtype=np.float32)
 
+        # Loop through each radar and compute the detection level for each grid cell
         for radar in self.radars:
             for i in range(self.height):
                 for j in range(self.width):
@@ -70,7 +73,7 @@ class Map:
                     psi_i_star = radar.compute_detection_level(lat, lon)
                     detection_map[i, j] = max(detection_map[i, j], psi_i_star)
 
-        # Step 2: MinMax normalization with epsilon
+        # MinMax normalization with epsilon
         psi_min = detection_map.min()
         psi_max = detection_map.max()
 
@@ -78,6 +81,7 @@ class Map:
         if psi_max == psi_min:
             detection_map[:] = EPSILON  # All cells have same value, just set them to epsilon
         else:
+            # Normalize the detection map to the range [EPSILON, 1]
             detection_map = ((detection_map - psi_min) / (psi_max - psi_min)) * (1 - EPSILON) + EPSILON
-            
+
         return detection_map

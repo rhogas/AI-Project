@@ -45,11 +45,13 @@ def build_graph(detection_map: np.array, tolerance: np.float32) -> nx.DiGraph:
     #   -> Go right
     # Not every point has always 4 possible neighbors
 
+    # Create a directed graph
     graph = nx.DiGraph()
     H, W = detection_map.shape
 
     for i in range(H):
         for j in range(W):
+            # Skip the cell if it is above the tolerance
             if detection_map[i, j] > tolerance:
                 continue
             current = (i, j)
@@ -63,6 +65,7 @@ def build_graph(detection_map: np.array, tolerance: np.float32) -> nx.DiGraph:
                 (i, j + 1)   # right
             ]
 
+            # Add edges to the graph for each valid neighbor
             for ni, nj in neighbors:
                 if 0 <= ni < H and 0 <= nj < W:
                     if detection_map[ni, nj] < tolerance:
@@ -79,7 +82,7 @@ def discretize_coords(high_level_plan: np.array, boundaries: Boundaries, map_wid
 
     # Result array for discrete coordinates
     discrete_coords = []
-
+    
     for lat, lon in high_level_plan:
         # Normalize latitude and longitude to [0, 1]
         norm_lat = (lat - min_lat) / (max_lat - min_lat)
@@ -123,6 +126,7 @@ def path_finding(G: nx.DiGraph,
         if next_index == current_index:
             continue
 
+        # Get the source and target coordinates
         source = tuple(discrete_coords[visiting_order[current_index]])
         target = tuple(discrete_coords[visiting_order[next_index]])
 
@@ -137,16 +141,17 @@ def path_finding(G: nx.DiGraph,
                 final_path.extend(path_segment)
             else:
                 final_path.extend(path_segment[1:])  # Avoid duplicating the target node
-                
 
             # Add the POI to the pois_in_path list
             pois_in_path.append(target)  # Save the discrete target grid coordinate
 
             current_index = next_index  # Update the current index to the next one
 
+        # # Handle exceptions for POIs not in the graph or no path exists
         except nx.NodeNotFound:
             print(f"ERROR. One of the POIs ({source} or {target}) is not in the graph.\nThe POI may be outside the map or has no valid neighbors due to the tolerance setting (it is too low).")
             return None, 0, None
+        
         except nx.NetworkXNoPath: # This exception is raised by astar_path if no path exists
             print(f"ERROR. No path exists from {source} POI to {target} POI with the current map and tolerance.")
             return None, 0, None
@@ -175,7 +180,8 @@ def compute_path_cost(G: nx.DiGraph, solution_plan: list) -> np.float32:
 
 def create_visiting_order(locations, heuristic_function, G, boundaries, map_width, map_height):
     """ Create the visiting order of the POIs based on the heuristic function """
-
+    
+    # Check if the number of POIs is less than 2
     if len(locations) < 2:
         print("ERROR. The number of POIs to visit is less than 2.")
         return None
@@ -196,7 +202,8 @@ def create_visiting_order(locations, heuristic_function, G, boundaries, map_widt
             # Skip if the next POI is the same as the current one
             if next_poi == current_index:
                 continue
-
+            
+            # Get the source and target coordinates
             source = tuple(discretize_coords([locations[current_index]], boundaries, map_width, map_height)[0])
             target = tuple(discretize_coords([locations[next_poi]], boundaries, map_width, map_height)[0])
 
@@ -212,6 +219,8 @@ def create_visiting_order(locations, heuristic_function, G, boundaries, map_widt
                 else:
                     print(f"ERROR. No path exists between {source} and {target}")
                     return None
+            
+            # Handle exceptions for POIs not in the graph or no path exists
             except nx.NodeNotFound:
                 print(f"ERROR. One of the POIs ({source} or {target}) is not in the graph.\nThe POI may be outside the map or has no valid neighbors due to the tolerance setting (it is too low).")
                 return None
