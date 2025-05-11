@@ -1,0 +1,159 @@
+# Required imports
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import sys
+import json
+import os
+from Map import Map
+from Boundaries import Boundaries
+from SearchEngine import build_graph, path_finding, compute_path_cost, h1, h2
+
+def plot_radar_locations(boundaries: Boundaries, radar_locations: np.array) -> None:
+    """ Auxiliary function for plotting the radar locations """
+    plt.figure(figsize=(8, 8))
+    plt.title("Radar locations in the map")
+    plt.plot([boundaries.min_lon, boundaries.max_lon, boundaries.max_lon, boundaries.min_lon, boundaries.min_lon],
+             [boundaries.max_lat, boundaries.max_lat, boundaries.min_lat, boundaries.min_lat, boundaries.max_lat],
+             label='Boundaries',
+             linestyle='--',
+             c='black')
+    plt.scatter(radar_locations[:, 1], radar_locations[:, 0], label='Radars', c='green')
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+    return
+
+def plot_detection_fields(detection_map: np.array, bicubic: bool=True) -> None:
+    """ Auxiliary function for plotting the detection fields """
+    plt.figure(figsize=(8, 8))
+    plt.title("Radar detection fields")
+    im = plt.imshow(X=detection_map, cmap='Greens', interpolation='bicubic' if bicubic else None)
+    plt.colorbar(im, label='Detection values')
+    plt.show()
+    return
+
+def plot_solution(detection_map: np.array, solution_plan: list, pois: list, bicubic: bool=True) -> None:
+    """ Auxiliary function for plotting the solution plan with markers in each POI """
+    plt.figure(figsize=(8,8))
+    plt.title("Solution plan")
+
+    # Split into lat and lon
+    lats = [point[0] for point in solution_plan]
+    lons = [point[1] for point in solution_plan]
+
+    # Plot blue line connecting all path points
+    plt.plot(lons, lats, color='blue', linewidth=1, zorder=1, label='Path')
+
+    # Plot POIs
+    for i, poi in enumerate(pois):
+        plt.scatter(poi[1], poi[0], c='red', marker='o', edgecolors='black', s=60, label='Waypoints (POIs)' if i == 0 else "")
+
+    im = plt.imshow(X=detection_map, cmap='Greens', interpolation='bicubic' if bicubic else None)
+    plt.colorbar(im, label='Detection values')
+
+    # Plot the grid lines
+    height, width = detection_map.shape
+    for x in range(width + 1):
+        plt.axvline(x - 0.5, color='gray', linestyle='--', linewidth=0.5, alpha=0.5)
+    for y in range(height + 1):
+        plt.axhline(y - 0.5, color='gray', linestyle='--', linewidth=0.5, alpha=0.5)
+
+    plt.legend(loc = 'upper right')
+    plt.show()
+    return
+
+def parse_args() -> dict:
+    """ Parses the main arguments of the program and returns them stored in a dictionary """
+    json_path            = f"{os.getcwd()}/scenarios.json"
+    scenario_json        = sys.argv[1]
+    tolerance            = float(sys.argv[2])
+    execution_parameters = {}
+    with open(json_path, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+        for entry in data:
+            key = list(entry.keys())[0]
+            if key == scenario_json:
+                execution_parameters = entry[key]
+                break
+    execution_parameters["tolerance"] = tolerance
+    return execution_parameters
+
+# System's main function
+def main() -> None:
+
+    if len(sys.argv) != 3:
+        print("ERROR. Usage: python3 main.py <scenario> <tolerance>")
+        print("Example: python3 main.py scenario_1 0.5")
+        return
+    
+    # Parse the input parameters (arguments) of the program (current execution)
+    execution_parameters = parse_args()
+
+    # Ask the user for the heuristic function to use
+    heuristic_function = input("Select the heuristic function to use ('h1' for the Euclidean distance or 'h2' for the Manhattan distance):\n")
+    while heuristic_function not in ['h1', 'h2']:
+        print("ERROR. Invalid heuristic function. Please select either 'h1' or 'h2'.")
+        heuristic_function = input("Select the heuristic function to use ('h1' for the Euclidean distance or 'h2' for the Manhattan distance):\n")
+    
+    # Set the pseudo-random number generator seed (DO NOT MODIFY)
+    np.random.seed(42)
+
+    # Set boundaries
+    boundaries = Boundaries(max_lat=execution_parameters['max_lat'],
+                            min_lat=execution_parameters['min_lat'],
+                            max_lon=execution_parameters['max_lon'],
+                            min_lon=execution_parameters['min_lon'])
+    
+    # Define the map with its corresponding boundaries and coordinates
+    M = Map(boundaries=boundaries,
+            height=execution_parameters['H'],
+            width=execution_parameters['W'])
+    
+    # Generate random radars
+    n_radars = execution_parameters['n_radars']
+    M.generate_radars(n_radars=n_radars)
+    radar_locations = M.get_radars_locations_numpy()
+
+    # Plot the radar locations (latitude increments from bottom to top)
+    plot_radar_locations(boundaries=boundaries, radar_locations=radar_locations)
+
+    # Compute the detection map (sets the costs for each cell)
+    detection_map = M.compute_detection_map()
+
+    # Plot the detection map (detection fields)
+    plot_detection_fields(detection_map=detection_map)
+
+    # Build the graph from the detection map
+    G = build_graph(detection_map=detection_map, tolerance=execution_parameters['tolerance'])
+
+    # Get the POI's that the plane must visit
+    POIs = np.array(execution_parameters['POIs'], dtype=np.float32)
+
+    # Compute the solution
+    solution_plan, nodes_expanded, pois_in_path = path_finding(G=G,
+                                 heuristic_function=h1 if heuristic_function == 'h1' else h2,
+                                 locations=POIs, 
+                                 initial_location_index=0,
+                                 boundaries=boundaries,
+                                 map_width=M.width,
+                                 map_height=M.height)
+    
+    # Check if there is no solution
+    if solution_plan is None and nodes_expanded == 0 and pois_in_path is None:
+        return
+    
+    # Compute the solution cost
+    path_cost = compute_path_cost(G=G, solution_plan=solution_plan)
+
+    # Some verbose of the total cost and the number of expanded nodes
+    print(f"Total path cost: {path_cost}")
+    print(f"Number of expanded nodes: {nodes_expanded}")
+
+    # Plot the solution
+    plot_solution(detection_map=detection_map, pois=pois_in_path, solution_plan=solution_plan)
+
+if __name__ == '__main__':
+    main()
