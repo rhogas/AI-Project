@@ -61,7 +61,7 @@ def plot_solution(detection_map: np.array, solution_plan: list, pois: list, bicu
     for y in range(height + 1):
         plt.axhline(y - 0.5, color='gray', linestyle='--', linewidth=0.5, alpha=0.5)
 
-    plt.legend(loc = 'lower left')
+    plt.legend(loc = 'upper right')
     plt.show()
     return
 
