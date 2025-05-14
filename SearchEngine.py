@@ -9,7 +9,7 @@ from networkx import astar_path
 NODES_EXPANDED = 0
 
 def h1(current_node, objective_node) -> np.float32:
-    """ First heuristic to implement """
+    """ First heuristic to implement: Euclidean distance """
     global NODES_EXPANDED
 
     # Extract current node and goal node coordinates
@@ -23,7 +23,7 @@ def h1(current_node, objective_node) -> np.float32:
     return h
 
 def h2(current_node, objective_node) -> np.float32:
-    """ Second heuristic to implement """
+    """ Second heuristic to implement: Manhattan distance """
     global NODES_EXPANDED
 
     # Extract current node and goal node coordinates
@@ -147,8 +147,8 @@ def path_finding(G: nx.DiGraph,
 
             current_index = next_index  # Update the current index to the next one
 
-        # # Handle exceptions for POIs not in the graph or no path exists
-        except nx.NodeNotFound:
+        # Handle exceptions for POIs not in the graph or no path exists
+        except nx.NodeNotFound: # This exception is raised by astar_path if the node is not in the graph
             print(f"ERROR. One of the POIs ({source} or {target}) is not in the graph.\nThe POI may be outside the map or has no valid neighbors due to the tolerance setting (it is too low).")
             return None, 0, None
         
@@ -221,11 +221,11 @@ def create_visiting_order(locations, heuristic_function, G, boundaries, map_widt
                     return None
             
             # Handle exceptions for POIs not in the graph or no path exists
-            except nx.NodeNotFound:
+            except nx.NodeNotFound: # This exception is raised by astar_path if a POI is not in the graph
                 print(f"ERROR. One of the POIs ({source} or {target}) is not in the graph.\nThe POI may be outside the map or has no valid neighbors due to the tolerance setting (it is too low).")
                 return None
 
-            except nx.NetworkXNoPath:
+            except nx.NetworkXNoPath: # This exception is raised by astar_path if no path exists
                 print(f"ERROR. No path exists from {source} POI to {target} POI with the current map and tolerance.")
                 return None
 
